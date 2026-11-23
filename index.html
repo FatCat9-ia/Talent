@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talent Tracking — FATCAT9 Market IQ demo</title>
+<style>
+/* Design tokens the dashboard runtime normally provides (light theme). */
+:root { --color-fg: #1d1a1c; --color-fg-muted: #6e676b; --color-bg: #ffffff; --color-panel: #f6f3f5; --color-border-line: #e7e1e4;
+  --color-ok: #1e8449; --color-warn: #b7791f; --color-bad: #c0392b; --font-anthropic-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cds-font-size-caption: 12.5px; --cds-font-size-body: 14px; --cds-font-size-heading: 16px; --cds-font-size-title: 24px; --cds-font-weight-medium: 500;
+  --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 12px; --cds-gap-lg: 20px; --cds-gap-xl: 32px;
+  --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 16px; --cds-pad-xl: 24px; --cds-radius: 10px;
+  --cds-chart-grid: #efebed; --cds-chart-axis: #d3ccd0; --cds-chart-reference: #b9b0b5; --cds-chart-muted: #cdc6ca;
+  --cds-text-secondary: #6e676b; --cds-surface-popover: #ffffff; --cds-border: #e7e1e4; --cds-shadow-popover: 0 8px 24px rgba(40, 6, 28, 0.12); }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-anthropic-sans); font-size: 14px; }
+#dash-root { max-width: 1280px; margin: 0 auto; padding: 24px; }
+select.dash-select { font: inherit; font-size: 13px; padding: 7px 28px 7px 10px; border: 1px solid var(--color-border-line); background-color: var(--color-bg); color: var(--color-fg);
+  appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236e676b' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; }
+.dash-skeleton { color: transparent !important; background: linear-gradient(90deg, var(--color-panel), var(--color-border-line), var(--color-panel)); border-radius: 6px; min-width: 3em; }
+</style>
+<style>
+@font-face { font-family: 'Google Sans Flex'; font-style: normal; font-display: swap; font-weight: 1 1000; src: url('assets/google-sans-flex-latin-wght.woff2') format('woff2-variations'), url('assets/google-sans-flex-latin-wght.woff2') format('woff2'); }
+.tt { --tt-pink: #D6247E; --tt-deep: #9C1A63; --tt-plum: #5E0A3C; --tt-font: 'Google Sans Flex', var(--font-anthropic-sans); --tt-r: 16px;
+  --tt-shadow: 0 1px 2px rgba(40, 6, 28, 0.05), 0 6px 24px rgba(40, 6, 28, 0.06);
+  font-family: var(--tt-font); color: var(--color-fg); font-variant-numeric: tabular-nums; container: tt / inline-size; }
+.tt-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cds-gap-md) var(--cds-gap-xl);
+  background: radial-gradient(120% 160% at 100% 0%, #B81C6C 0%, rgba(184, 28, 108, 0) 55%), linear-gradient(120deg, #1E0414 0%, #4A0830 60%, #7A1250 100%);
+  color: #fff; border-radius: 22px; padding: 22px 28px; margin-bottom: var(--cds-gap-lg); }
+.tt-head-main { min-width: 0; }
+.tt-eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); margin: 0 0 4px; }
+.tt-head h1 { font-family: var(--tt-font); font-weight: 680; letter-spacing: -0.02em; font-size: 1.9rem; line-height: 1.1; margin: 0 0 6px; color: #fff; }
+.tt-sub { color: rgba(255, 255, 255, 0.78); font-size: var(--cds-font-size-caption); margin: 0; }
+.tt-demo { display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.14); font-size: 11px; color: #fff; }
+.tt-logo { display: block; height: 28px; width: auto; }
+.tt-takeaway { font-size: 1.15rem; line-height: 1.5; margin: 0 0 var(--cds-gap-lg); max-width: 64rem; }
+.tt-takeaway b { color: var(--tt-pink); font-weight: 650; }
+.tt-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 12px 14px; background: var(--color-bg); border: 1px solid var(--color-border-line);
+  border-radius: var(--tt-r); box-shadow: var(--tt-shadow); position: sticky; top: 8px; z-index: 5; }
+.tt-filters label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-fg-muted); min-width: 7.5rem; flex: 1 1 7.5rem; }
+.tt-filters select { width: 100%; border-radius: 10px; font-family: var(--tt-font); }
+.tt-btn { font: inherit; font-size: var(--cds-font-size-caption); font-weight: 600; padding: 8px 16px; border: 0; border-radius: 999px; background-color: var(--tt-pink); color: #fff; cursor: pointer; }
+.tt-btn:hover { background-color: var(--tt-deep); }
+.tt-active { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 10px 2px var(--cds-gap-lg); }
+.tt-kpis { container-type: inline-size; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; margin-bottom: var(--cds-gap-xl); }
+.tt-kpis-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tt-kpi { background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: 14px; box-shadow: var(--tt-shadow); padding: 12px 12px 11px; min-width: 0; position: relative; overflow: hidden; }
+.tt-kpi::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(var(--tt-pink), var(--tt-plum)); }
+.tt-kpi-label { font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-kpi-value { font-family: var(--tt-font); font-weight: 650; letter-spacing: -0.03em; font-size: clamp(1rem, 2.05cqi, 1.75rem); line-height: 1.15; margin: 6px 0 4px; white-space: nowrap; min-height: 1.15em; }
+.tt-kpi-sub { font-size: 11px; color: var(--color-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-chip { display: inline-block; padding: 1px 7px; border-radius: 999px; font-weight: 600; background: var(--color-panel); }
+.tt-chip.tt-good { background: color-mix(in srgb, var(--color-ok) 14%, transparent); }
+.tt-chip.tt-bad { background: color-mix(in srgb, var(--color-bad) 14%, transparent); }
+@container tt (max-width: 820px) { .tt-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } .tt-kpi-value { font-size: clamp(1rem, 4.2cqi, 1.6rem); } }
+.tt-good { color: var(--color-ok); }
+.tt-bad { color: var(--color-bad); }
+.tt-muted { color: var(--color-fg-muted); }
+.tt-card { background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: 20px; box-shadow: var(--tt-shadow); padding: 20px 22px; min-width: 0; }
+.tt-section { margin: 0 0 var(--cds-gap-xl); }
+.tt-card > h2, .tt-section > h2 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 4px; }
+.tt-desc { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0 0 var(--cds-gap-md); max-width: 54rem; line-height: 1.45; }
+.tt-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--cds-gap-lg); margin-bottom: var(--cds-gap-xl); }
+.tt-chart { position: relative; min-height: 260px; }
+.tt-chart svg { display: block; overflow: visible; }
+.tt-chart text { font-family: var(--tt-font); font-size: 11px; fill: var(--cds-text-secondary); }
+.tt-chart .tt-name { font-size: 12.5px; font-weight: 500; fill: var(--color-fg); }
+.tt-chart .tt-val { font-size: 11.5px; font-weight: 650; fill: var(--color-fg); }
+.tt-chart .tt-colhead { font-size: 11px; font-weight: 650; letter-spacing: 0.08em; fill: var(--cds-text-secondary); }
+.tt-chart .tt-quad { font-size: 11px; font-weight: 600; fill: var(--tt-pink); }
+.tt-chart .tt-track { fill: var(--color-panel); }
+.tt-chart .tt-grid line { stroke: var(--cds-chart-grid); }
+.tt-click { cursor: pointer; }
+.tt-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; color: var(--color-fg-muted); margin: 0 0 var(--cds-gap-sm); }
+.tt-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tt-sw { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+.tt-tip { position: absolute; z-index: 10; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); box-shadow: var(--cds-shadow-popover); border-radius: 12px; padding: 10px 12px; font-size: var(--cds-font-size-caption); color: var(--cds-text-secondary); max-width: 260px; }
+.tt-tip-h { color: var(--color-fg); font-weight: 650; margin-bottom: 2px; }
+.tt-toolbar { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.tt-toolbar select { min-width: 12rem; border-radius: 10px; font-family: var(--tt-font); }
+.tt-scroll { overflow-x: auto; border: 1px solid var(--color-border-line); border-radius: var(--tt-r); background: var(--color-bg); box-shadow: var(--tt-shadow); }
+.tt-table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.tt-table th { text-align: left; font-weight: 600; font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-fg-muted); padding: 11px 12px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.tt-table td { padding: 10px 12px; border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.tt-table tbody tr:last-child td { border-bottom: 0; }
+.tt-table tbody tr:hover td { background: color-mix(in srgb, var(--tt-pink) 5%, transparent); }
+.tt-table td.tt-num, .tt-table th.tt-num { text-align: right; white-space: nowrap; }
+.tt-table td.tt-wide { min-width: 18rem; }
+.tt-table td.tt-nowrap { white-space: nowrap; }
+.tt-bar { display: flex; align-items: center; gap: 8px; min-width: 9rem; }
+.tt-bar i { display: block; height: 8px; border-radius: 999px; }
+.tt-badge { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--color-panel); white-space: nowrap; font-size: 11px; }
+.tt-badge.tt-warn { color: var(--color-warn); background: color-mix(in srgb, var(--color-warn) 12%, transparent); }
+.tt-row-sel td { background: color-mix(in srgb, var(--tt-pink) 8%, transparent); }
+.tt-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: var(--cds-gap-sm) 0 0; }
+.tt-profile dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: var(--cds-gap-md); margin: 0; }
+.tt-profile dt { font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-fg-muted); }
+.tt-profile dd { margin: 4px 0 0; }
+.tt-profile h3 { font-family: var(--tt-font); font-weight: 680; letter-spacing: -0.02em; font-size: 1.5rem; margin: 0 0 var(--cds-gap-md); }
+.tt-foot details { margin-top: var(--cds-gap-lg); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.tt-foot summary { cursor: pointer; color: var(--color-fg); font-weight: 600; }
+.tt-foot dl { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr; gap: 6px var(--cds-gap-md); margin: var(--cds-gap-md) 0 0; }
+.tt-foot dt { color: var(--color-fg); }
+.tt-foot dd { margin: 0; }
+/* calmer pass: solid colors, lighter type, fewer borders */
+.tt-head { background: #2B0A1F; border-radius: 16px; padding: 18px 24px; }
+.tt-head h1 { font-size: 1.45rem; font-weight: 620; }
+.tt-eyebrow { font-size: 10.5px; }
+.tt-logo { height: 24px; }
+.tt-demo { background: rgba(255, 255, 255, 0.12); }
+.tt-takeaway { font-size: 1rem; line-height: 1.55; }
+.tt-takeaway b { font-weight: 600; }
+.tt-filters { background: var(--color-panel); border: 0; box-shadow: none; border-radius: 14px; }
+.tt-kpi { background: var(--color-panel); border: 0; box-shadow: none; border-radius: 12px; padding: 12px 14px; }
+.tt-kpi::before { display: none; }
+.tt-kpi-label { font-size: 10px; }
+.tt-kpi-value { font-size: clamp(0.95rem, 1.75cqi, 1.4rem); font-weight: 600; letter-spacing: -0.02em; margin: 5px 0 3px; }
+@container tt (max-width: 820px) { .tt-kpi-value { font-size: clamp(0.95rem, 3.8cqi, 1.35rem); } }
+.tt-card { background: var(--color-panel); border: 0; box-shadow: none; border-radius: 16px; padding: 18px 20px; }
+.tt-card > h2, .tt-section > h2 { font-size: 1rem; font-weight: 600; }
+.tt-scroll { border: 0; box-shadow: none; background: var(--color-panel); border-radius: 14px; }
+.tt-table th { border-bottom-color: color-mix(in srgb, var(--color-border-line) 70%, transparent); }
+.tt-table td { border-bottom-color: color-mix(in srgb, var(--color-border-line) 50%, transparent); }
+.tt-chart .tt-name { font-size: 12px; }
+.tt-chart .tt-val { font-size: 11px; font-weight: 600; }
+.tt-chart .tt-track { fill: var(--color-bg); }
+#readouts .tt-scroll, #posts .tt-scroll { max-height: 560px; overflow-y: auto; }
+#readouts .tt-table th, #posts .tt-table th { position: sticky; top: 0; background: var(--color-panel); z-index: 1; }
+@media print { #readouts .tt-scroll, #posts .tt-scroll { max-height: none; } }
+@media print { .tt-filters { position: static; } .tt-btn { display: none; } }
+</style>
+</head>
+<body>
+<div id="dash-root">
+<div class="tt">
+  <header class="tt-head" id="top">
+    <div class="tt-head-main">
+      <p class="tt-eyebrow">Market IQ · Industry view</p>
+      <h1>Talent Tracking</h1>
+      <p class="tt-sub">Public conversation about talent across studios, markets, platforms and months.<span class="tt-demo">Demo · simulated data</span></p>
+    </div>
+    <img class="tt-logo" src="assets/fatcat9_logo_white.png" alt="FATCAT9">
+  </header>
+
+  <p class="tt-takeaway" id="takeaway" data-draw="takeaway" data-source="by_talent">—</p>
+
+  <div class="tt-filters" id="filters" role="group" aria-label="Filters">
+    <label>Month<select class="dash-select" data-draw="f_month" data-source="matrix" aria-label="Month"></select></label>
+    <label>Country<select class="dash-select" id="f-country" aria-label="Country">
+      <option value="">All markets</option><option value="US">United States</option><option value="MX">Mexico</option><option value="UK">United Kingdom</option><option value="BR">Brazil</option><option value="FR">France</option>
+    </select></label>
+    <label>Studio<select class="dash-select" id="f-studio" aria-label="Studio">
+      <option value="">All studios</option><option>A24</option><option>Amazon MGM</option><option>Apple TV+</option><option>HBO</option><option>Netflix</option><option>Paramount Skydance</option><option>Multi-studio</option>
+    </select></label>
+    <label>Talent<select class="dash-select" data-draw="f_talent" data-source="talents" aria-label="Talent"></select></label>
+    <label>Platform<select class="dash-select" id="f-platform" aria-label="Platform">
+      <option value="">All platforms</option><option>TikTok</option><option>Instagram</option><option>Facebook</option><option>YouTube</option><option>X</option><option>Reddit</option><option>Google News</option>
+    </select></label>
+    <button type="button" class="tt-btn" id="f-reset">Reset</button>
+  </div>
+  <p class="tt-active" id="active-filters" data-draw="f_summary">—</p>
+
+  <div class="tt-kpis" id="kpis">
+    <div class="tt-kpi" id="kpi-posts"><div class="tt-kpi-label">Posts</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="int" data-source="kpis" data-field="posts" data-row="0">—</div><div class="tt-kpi-sub"><span class="tt-chip" data-draw="val" data-fmt="signed" data-good="up" data-source="kpis" data-field="mom" data-row="0">—</span> MoM</div></div>
+    <div class="tt-kpi" id="kpi-authors"><div class="tt-kpi-label">Authors</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="int" data-source="kpis" data-field="authors" data-row="0">—</div><div class="tt-kpi-sub">Not deduplicated</div></div>
+    <div class="tt-kpi" id="kpi-engagement"><div class="tt-kpi-label">Engagement</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="int" data-source="kpis" data-field="engagement" data-row="0">—</div><div class="tt-kpi-sub">All interactions</div></div>
+    <div class="tt-kpi" id="kpi-eng1k"><div class="tt-kpi-label">Eng. / 1K views</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="one" data-source="kpis" data-field="eng_1k" data-row="0">—</div><div class="tt-kpi-sub">Public views only</div></div>
+    <div class="tt-kpi" id="kpi-pull"><div class="tt-kpi-label">Talent pull</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="pct" data-source="kpis" data-field="pull_rate" data-row="0">—</div><div class="tt-kpi-sub">Drives interest</div></div>
+    <div class="tt-kpi" id="kpi-title"><div class="tt-kpi-label">Title assoc.</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="pct" data-source="kpis" data-field="title_pct" data-row="0">—</div><div class="tt-kpi-sub">Linked to the title</div></div>
+    <div class="tt-kpi" id="kpi-positive"><div class="tt-kpi-label">Positive</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="pct" data-source="kpis" data-field="pos_pct" data-row="0">—</div><div class="tt-kpi-sub">Negative <span data-draw="val" data-fmt="pct" data-source="kpis" data-field="neg_pct" data-row="0">—</span></div></div>
+    <div class="tt-kpi" id="kpi-fatigue"><div class="tt-kpi-label">Fatigue</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="pct" data-source="kpis" data-field="fatigue_pct" data-row="0">—</div><div class="tt-kpi-sub">Overexposure</div></div>
+  </div>
+
+  <div class="tt-grid2">
+    <section class="tt-card" id="share">
+      <h2>Share of conversation</h2>
+      <p class="tt-desc">Each talent's relevant posts as a share of all monitored talent, across every studio, in the same month, market and platform. Click a row to focus on that talent.</p>
+      <div class="tt-chart" data-draw="soc_chart" data-source="by_talent"></div>
+    </section>
+    <section class="tt-card" id="pull-vs-title">
+      <h2>Talent pull vs. title association</h2>
+      <p class="tt-desc">Does the talent drive interest, and does it land on the title? The shaded corner is the sweet spot. Bubble size is post volume.</p>
+      <div class="tt-chart" data-draw="scatter" data-source="by_talent"></div>
+    </section>
+  </div>
+
+  <section class="tt-card tt-section" id="markets">
+    <h2>Talent by market</h2>
+    <p class="tt-desc">The same talent can perform very differently by country. Darker cells score higher on the chosen metric. Grey cells have fewer than <span data-draw="min_sample">—</span> posts and are not reported. Click a cell to filter by talent and country.</p>
+    <div class="tt-toolbar"><label for="hm-metric">Metric</label>
+      <select class="dash-select" id="hm-metric" aria-label="Heatmap metric">
+        <option value="soc">Share of conversation</option><option value="pull_rate">Talent-pull rate</option><option value="title_pct">Title association</option><option value="pos_pct">Positive tone</option><option value="fatigue_pct">Fatigue / rejection</option><option value="eng_1k">Engagement / 1K views</option><option value="mom">MoM post change</option><option value="posts">Relevant posts</option>
+      </select></div>
+    <div class="tt-chart" data-draw="heatmap" data-source="heatmap"></div>
+  </section>
+
+  <section class="tt-card tt-section" id="trend-section">
+    <h2>Conversation over time</h2>
+    <p class="tt-desc">Monthly relevant posts. The five largest talents in the selected month are in color; the rest are grey. Rings mark events such as trailers and premieres (illustrative).</p>
+    <div class="tt-chart" data-draw="trend" data-source="trend events"></div>
+  </section>
+
+  <section class="tt-section" id="platforms">
+    <h2>Platform mix</h2>
+    <p class="tt-desc">Where the conversation happens and how each platform performs. Reddit and Google News expose no public view counts, so they don't count toward engagement per 1K views.</p>
+    <div class="tt-scroll"><table class="tt-table" data-source="by_platform" data-row-key="platform">
+      <thead><tr><th data-field="platform">Platform</th><th data-field="posts" class="tt-num">Posts</th><th data-field="share">Share of posts</th><th data-field="eng_1k" class="tt-num">Eng. / 1K views</th><th data-field="pull_rate" class="tt-num">Talent pull</th><th data-field="title_pct" class="tt-num">Title assoc.</th><th data-field="pos_pct" class="tt-num">Positive</th><th data-field="neg_pct" class="tt-num">Negative</th><th data-field="view_cov" class="tt-num">View data</th></tr></thead>
+      <tbody data-draw="platform_rows"></tbody>
+    </table></div>
+  </section>
+
+  <div class="tt-grid2">
+    <section class="tt-card" id="intent">
+      <h2>What people say: intent</h2>
+      <p class="tt-desc">Share of each talent's conversation by intent. Fatigue is the early warning for overexposure.</p>
+      <div class="tt-chart" data-draw="intent_chart" data-source="by_talent"></div>
+    </section>
+    <section class="tt-card" id="tone">
+      <h2>How they say it: tone</h2>
+      <p class="tt-desc">Positive, neutral and negative tone, read with local-language context.</p>
+      <div class="tt-chart" data-draw="tone_chart" data-source="by_talent"></div>
+    </section>
+  </div>
+
+  <section class="tt-section" id="profile-section">
+    <h2>Talent profile</h2>
+    <p class="tt-desc" id="profile-hint">Pick a talent in the filters, or click a bar or cell, to see what drives their conversation.</p>
+    <div class="tt-card tt-profile" id="profile" hidden>
+      <h3 data-draw="val" data-fmt="text" data-source="profile" data-field="talent" data-row="0">—</h3>
+      <dl>
+        <div><dt>Studio</dt><dd data-draw="val" data-fmt="text" data-source="profile" data-field="studio" data-row="0">—</dd></div>
+        <div><dt>Title / character</dt><dd data-draw="val" data-fmt="text" data-source="profile" data-field="title_character" data-row="0">—</dd></div>
+        <div><dt>Top driver this month</dt><dd data-draw="val" data-fmt="text" data-source="profile" data-field="top_driver" data-row="0">—</dd></div>
+        <div><dt>Event this month</dt><dd data-draw="val" data-fmt="text" data-source="profile" data-field="event" data-row="0">—</dd></div>
+        <div><dt>Top keywords</dt><dd data-draw="val" data-fmt="text" data-source="profile" data-field="keywords" data-row="0">—</dd></div>
+        <div><dt>Audience affinities</dt><dd data-draw="val" data-fmt="text" data-source="profile" data-field="affinities" data-row="0">—</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="tt-section" id="readouts">
+    <h2>Market readouts</h2>
+    <p class="tt-desc">One row per talent and market, with the analyst readout for the month. Metrics follow every filter; drivers, events and readouts describe all platforms combined.</p>
+    <div class="tt-scroll"><table class="tt-table" data-source="markets" data-row-key="talent,country">
+      <thead><tr><th data-field="talent">Talent</th><th data-field="studio">Studio</th><th data-field="country">Country</th><th data-field="posts" class="tt-num">Posts</th><th data-field="soc" class="tt-num">Share</th><th data-field="mom" class="tt-num">MoM</th><th data-field="pull_rate" class="tt-num">Pull</th><th data-field="title_pct" class="tt-num">Title assoc.</th><th data-field="pos_pct" class="tt-num">Positive</th><th data-field="fatigue_pct" class="tt-num">Fatigue</th><th data-field="top_driver">Top driver</th><th data-field="event_response" class="tt-num">Event lift</th><th data-field="sample">Sample</th><th data-field="readout">Readout</th></tr></thead>
+      <tbody data-draw="market_rows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="tt-section" id="posts">
+    <h2>Post explorer</h2>
+    <p class="tt-desc">The auditable layer: top posts by engagement in the post-level sample for the current filters. <span data-draw="val" data-fmt="int" data-source="posts_summary" data-field="matched" data-row="0">—</span> sample posts match. Links are simulated and intentionally invalid.</p>
+    <div class="tt-scroll"><table class="tt-table" data-source="posts_view" data-row-key="record_id">
+      <thead><tr><th data-field="published_at">Published</th><th data-field="platform">Platform</th><th data-field="country">Country</th><th data-field="talent">Talent</th><th data-field="excerpt">Excerpt</th><th data-field="intent">Intent</th><th data-field="tone">Tone</th><th data-field="talent_pull">Pull</th><th data-field="views" class="tt-num">Views</th><th data-field="engagement" class="tt-num">Engagement</th><th data-field="country_confidence" class="tt-num">Country conf.</th><th data-field="human_validated">Validated</th><th data-field="public_url">Public URL</th></tr></thead>
+      <tbody data-draw="post_rows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="tt-section" id="quality">
+    <h2>Data quality</h2>
+    <p class="tt-desc">How much of the corpus supports each metric for the current filters.</p>
+    <div class="tt-kpis tt-kpis-4">
+      <div class="tt-kpi"><div class="tt-kpi-label">View-data coverage</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="pct" data-source="quality" data-field="view_cov" data-row="0">—</div><div class="tt-kpi-sub">Posts with public views</div></div>
+      <div class="tt-kpi"><div class="tt-kpi-label">Country attribution</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="pct" data-source="quality" data-field="attribution" data-row="0">—</div><div class="tt-kpi-sub">Posts assigned a country</div></div>
+      <div class="tt-kpi"><div class="tt-kpi-label">Low-sample cells</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="int" data-source="quality" data-field="low_cells" data-row="0">—</div><div class="tt-kpi-sub">of <span data-draw="val" data-fmt="int" data-source="quality" data-field="cells" data-row="0">—</span> talent × market cells</div></div>
+      <div class="tt-kpi"><div class="tt-kpi-label">Human-validated</div><div class="tt-kpi-value dash-skeleton" data-draw="val" data-fmt="pct" data-source="posts_summary" data-field="validated_pct" data-row="0">—</div><div class="tt-kpi-sub">Share of post sample reviewed</div></div>
+    </div>
+  </section>
+
+  <footer class="tt-foot">
+    <details>
+      <summary>Metric definitions and delivery rules</summary>
+      <dl>
+        <dt>Relevant posts</dt><dd>Public posts kept after relevance, wording-dictionary and noise filtering. The base for every rate.</dd>
+        <dt>Share of conversation</dt><dd>A talent's relevant posts divided by all monitored talent's posts, across every studio, in the same month, market and platform. Not a ranking against all celebrities.</dd>
+        <dt>Talent-pull rate</dt><dd>Posts saying the performer motivates watching or interest in a title, divided by relevant posts. A public signal, not viewing behavior.</dd>
+        <dt>Title association</dt><dd>Posts that explicitly link the talent to their monitored title or character. Measures title transfer rather than fame.</dd>
+        <dt>Intent</dt><dd>Wants to watch, recommends, fan / advocacy, fatigue / rejection, and other discussion (mostly performance talk). Together they make 100%.</dd>
+        <dt>Engagement / 1K views</dt><dd>Likes + comments + shares divided by public views, × 1,000, only where the platform shows views.</dd>
+        <dt>Authors</dt><dd>Distinct public authors per platform. Summed across platforms, so the same person may count more than once.</dd>
+        <dt>Event lift</dt><dd>Change in conversation in an event window versus the baseline. Directional, not paid-media attribution.</dd>
+        <dt>Sample status</dt><dd>Cells under the minimum sample are flagged and greyed out rather than reported.</dd>
+        <dt>Scope</dt><dd>Public data only, monthly delivery, country-level results. This demo uses simulated data for 16 current talents across 7 studios, 5 markets, 7 platforms and 6 months. Events are illustrative.</dd>
+      </dl>
+    </details>
+  </footer>
+</div>
+</div>
+<script src="js/vendor/d3.v7.min.js"></script>
+<script src="js/dash-shim.js"></script>
+<script src="js/core.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/tables.js"></script>
+</body>
+</html>
